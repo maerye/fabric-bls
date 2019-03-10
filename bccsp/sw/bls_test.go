@@ -1,6 +1,8 @@
 package sw
 
 import (
+	"encoding/asn1"
+	"github.com/Nik-U/pbc"
 	"github.com/hyperledger/fabric/bccsp"
 	"github.com/hyperledger/fabric/bls"
 	"github.com/stretchr/testify/assert"
@@ -15,14 +17,22 @@ func TestBLSSignerSign(t *testing.T)  {
 	verifierPublicKey := &blsPublicKeyVerifier{}
 
 	// Generate a key
-	kg := blsKeyGenerator{}
+	kg := blsKeyGenerator{160,521}
 	k, err := kg.KeyGen(&bccsp.BLSKeyGenOpts{true})
 	assert.NoError(t, err)
 	kb,_:=k.Bytes()
-	kn,_:=bls.PriKeyFromBytes(kb)
+	var kr= new(bls.PrivateKeyASN1)
+	 asn1.Unmarshal(kb,kr)
+	param,_:=pbc.NewParamsFromString(kr.Params)
+	pairing:=pbc.NewPairing(param)
+	kn:=&blsPrivateKey{&bls.PrivateKey{
+		X:pairing.NewZr().SetBytes(kr.X),
+		PubKey:&bls.PublicKey{Gx:pairing.NewG2().SetBytes(kr.Gx)},
+		G:pairing.NewG2().SetBytes(kr.G),
+		Params: kr.Params,
+	}}
 
 	assert.NotNil(t,kn)
-
 	pk, err := k.PublicKey()
 	assert.NoError(t, err)
 	// Sign
@@ -31,7 +41,7 @@ func TestBLSSignerSign(t *testing.T)  {
 	assert.NoError(t, err)
 	assert.NotNil(t, sigma)
 
-	sigma2, err :=kn.Sign(msg)
+	sigma2, err := signer.Sign(kn, msg, nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, sigma2)
 

@@ -66,11 +66,12 @@ func (kg *rsaKeyGenerator) KeyGen(opts bccsp.KeyGenOpts) (bccsp.Key, error) {
 	return &rsaPrivateKey{lowLevelKey}, nil
 }
 type blsKeyGenerator struct {
-
+	rbits int
+	qbits int
 }
 
 func (kg *blsKeyGenerator) KeyGen(opts bccsp.KeyGenOpts)(bccsp.Key, error){
-	lowlevelKey,err :=bls.GenerateKey()
+	lowlevelKey,err :=bls.GenerateKey(kg.rbits,kg.qbits)
 	if err != nil {
 		return nil, fmt.Errorf("Failed generating BLS key [%s]", err)
 	}
