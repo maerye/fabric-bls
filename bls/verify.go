@@ -700,7 +700,9 @@ func (c *Certificate) isValid(certType int, currentChain []*Certificate, opts *V
 
 	return nil
 }
-
+func (c *Certificate) systemVerify(opts *VerifyOptions) (chains [][]*Certificate, err error) {
+	return nil, nil
+}
 // Verify attempts to verify c by building one or more chains from c to a
 // certificate in opts.Roots, using certificates in opts.Intermediates if
 // needed. If successful, it returns one or more chains where the first
@@ -1071,4 +1073,3 @@ NextCert:
 
 	return true
 }
-

@@ -23,7 +23,6 @@ import (
 
 	"crypto/ecdsa"
 	"crypto/rsa"
-	"crypto/x509"
 	"reflect"
 
 	"github.com/hyperledger/fabric/bccsp"
@@ -151,12 +150,13 @@ type x509PublicKeyImportOptsKeyImporter struct {
 }
 
 func (ki *x509PublicKeyImportOptsKeyImporter) KeyImport(raw interface{}, opts bccsp.KeyImportOpts) (bccsp.Key, error) {
-	x509Cert, ok := raw.(*x509.Certificate)
+	x509Cert, ok := raw.(*bls.Certificate)
 	if !ok {
 		return nil, errors.New("Invalid raw material. Expected *x509.Certificate.")
 	}
 
 	pk := x509Cert.PublicKey
+
 
 	switch pk.(type) {
 	case *ecdsa.PublicKey:
@@ -170,9 +170,10 @@ func (ki *x509PublicKeyImportOptsKeyImporter) KeyImport(raw interface{}, opts bc
 	case *bls.PublicKey:
 		return ki.bccsp.keyImporters[reflect.TypeOf(&bccsp.BLSGoPublicKeyImportOpts{})].KeyImport(
 			pk,
-			&bccsp.BLSKeyGenOpts{Temporary:opts.Ephemeral()})
+			&bccsp.BLSGoPublicKeyImportOpts{Temporary:opts.Ephemeral()})
 
 	default:
+
 		return nil, errors.New("Certificate's public key type not recognized. Supported keys: [ECDSA, RSA]")
 	}
 }

@@ -38,6 +38,18 @@ type CA struct {
 	Signer   crypto.Signer
 	SignCert *x509.Certificate
 }
+type BLSCA struct {
+	Name               string
+	Country            string
+	Province           string
+	Locality           string
+	OrganizationalUnit string
+	StreetAddress      string
+	PostalCode         string
+	//SignKey  *ecdsa.PrivateKey
+	Signer   crypto.Signer
+	SignCert *bls.Certificate
+}
 
 // NewCA creates an instance of CA and saves the signing key pair in
 // baseDir/name
@@ -144,10 +156,10 @@ func NewRSACA(baseDir, org, name, country, province, locality, orgUnit, streetAd
 	}
 	return ca, response
 }
-func NewBLSCA(baseDir, org, name, country, province, locality, orgUnit, streetAddress, postalCode string) (*CA, error) {
+func NewBLSCA(baseDir, org, name, country, province, locality, orgUnit, streetAddress, postalCode string) (*BLSCA, error) {
 
 	var response error
-	var ca *CA
+	var ca *BLSCA
 
 	err := os.MkdirAll(baseDir, 0755)
 	if err == nil {
@@ -173,12 +185,12 @@ func NewBLSCA(baseDir, org, name, country, province, locality, orgUnit, streetAd
 
 				template.Subject = subject
 				template.SubjectKeyId = priv.SKI()
-
-				x509Cert, err := genCertificateBLS(baseDir, name, &template, &template,
+				temp :=bls.ParseX509Certificate2BLS(&template)
+				x509Cert, err := genCertificateBLS(baseDir, name, temp, temp,
 					blsPubKey, signer)
 				response = err
 				if err == nil {
-					ca = &CA{
+					ca = &BLSCA{
 						Name:               name,
 						Signer:             signer,
 						SignCert:           x509Cert,
@@ -264,8 +276,8 @@ func (ca *CA) SignRSACertificate(baseDir, name string, ous, sans []string, pub *
 
 	return cert, nil
 }
-func (ca *CA) SignBLSCertificate(baseDir, name string, ous, sans []string, pub *bls.PublicKey,
-	ku x509.KeyUsage, eku []x509.ExtKeyUsage) (*x509.Certificate, error) {
+func (ca *BLSCA) SignBLSCertificate(baseDir, name string, ous, sans []string, pub *bls.PublicKey,
+	ku x509.KeyUsage, eku []x509.ExtKeyUsage) (*bls.Certificate, error) {
 
 	template := x509Template()
 	template.KeyUsage = ku
@@ -287,8 +299,8 @@ func (ca *CA) SignBLSCertificate(baseDir, name string, ous, sans []string, pub *
 			template.DNSNames = append(template.DNSNames, san)
 		}
 	}
-
-	cert, err := genCertificateBLS(baseDir, name, &template, ca.SignCert,
+	tmp:=bls.ParseX509Certificate2BLS(&template)
+	cert, err := genCertificateBLS(baseDir, name, tmp, ca.SignCert,
 		pub, ca.Signer)
 
 	if err != nil {
@@ -412,8 +424,8 @@ func genCertificateRSA(baseDir, name string, template, parent *x509.Certificate,
 	}
 	return x509Cert, nil
 }
-func genCertificateBLS(baseDir, name string, template, parent *x509.Certificate, pub *bls.PublicKey,
-	priv interface{}) (*x509.Certificate, error) {
+func genCertificateBLS(baseDir, name string, template, parent *bls.Certificate, pub *bls.PublicKey,
+	priv interface{}) (*bls.Certificate, error) {
 
 	//create the x509 public cert
 	certBytes, err := bls.CreateCertificate(rand.Reader, template, parent, pub, priv)
@@ -489,8 +501,8 @@ func LoadCertificateRSA(certPath string) (*x509.Certificate, error) {
 
 	return cert, err
 }
-func LoadCertificateBLS(certPath string) (*x509.Certificate, error) {
-	var cert *x509.Certificate
+func LoadCertificateBLS(certPath string) (*bls.Certificate, error) {
+	var cert *bls.Certificate
 	var err error
 
 	walkFunc := func(path string, info os.FileInfo, err error) error {

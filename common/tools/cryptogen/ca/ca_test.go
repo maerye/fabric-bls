@@ -90,9 +90,9 @@ func TestLoadCertificateBLS(t *testing.T) {
 		[]x509.ExtKeyUsage{x509.ExtKeyUsageAny})
 	assert.NoError(t, err, "Failed to generate signed certificate")
 	// KeyUsage should be x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment
-	assert.Equal(t, x509.KeyUsageDigitalSignature|x509.KeyUsageKeyEncipherment,
+	assert.Equal(t, bls.KeyUsageDigitalSignature|bls.KeyUsageKeyEncipherment,
 		cert.KeyUsage)
-	assert.Contains(t, cert.ExtKeyUsage, x509.ExtKeyUsageAny)
+	assert.Contains(t, cert.ExtKeyUsage, bls.ExtKeyUsageAny)
 
 	loadedCert, err := ca.LoadCertificateBLS(certDir)
 	assert.NotNil(t, loadedCert, "Should load cert")
@@ -173,7 +173,7 @@ func TestNewBLSCA(t *testing.T) {
 	assert.NotNil(t, rootCA, "Failed to return CA")
 	assert.NotNil(t, rootCA.Signer,
 		"rootCA.Signer should not be empty")
-	assert.IsType(t, &x509.Certificate{}, rootCA.SignCert,
+	assert.IsType(t, &bls.Certificate{}, rootCA.SignCert,
 		"rootCA.SignCert should be type x509.Certificate")
 
 	// check to make sure the root public key was stored
@@ -371,9 +371,9 @@ func TestGenerateBLSSignCertificate(t *testing.T) {
 		[]x509.ExtKeyUsage{x509.ExtKeyUsageAny})
 	assert.NoError(t, err, "Failed to generate signed certificate")
 	// KeyUsage should be x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment
-	assert.Equal(t, x509.KeyUsageDigitalSignature|x509.KeyUsageKeyEncipherment,
+	assert.Equal(t, bls.KeyUsageDigitalSignature|bls.KeyUsageKeyEncipherment,
 		cert.KeyUsage)
-	assert.Contains(t, cert.ExtKeyUsage, x509.ExtKeyUsageAny)
+	assert.Contains(t, cert.ExtKeyUsage, bls.ExtKeyUsageAny)
 
 	cert, err = rootCA.SignBLSCertificate(certDir, testName, nil, nil, blsPubKey,
 		x509.KeyUsageDigitalSignature, []x509.ExtKeyUsage{})
@@ -417,9 +417,9 @@ func TestGenerateBLSSignCertificate(t *testing.T) {
 	assert.Error(t, err, "Bad name should fail")
 
 	// use an empty CA to test error path
-	badCA := &ca.CA{
+	badCA := &ca.BLSCA{
 		Name:     "badCA",
-		SignCert: &x509.Certificate{},
+		SignCert: &bls.Certificate{},
 	}
 	_, err = badCA.SignBLSCertificate(certDir, testName, nil, nil, &bls.PublicKey{},
 		x509.KeyUsageKeyEncipherment, []x509.ExtKeyUsage{x509.ExtKeyUsageAny})

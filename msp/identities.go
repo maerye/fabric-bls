@@ -21,7 +21,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/x509"
+
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
@@ -43,7 +43,7 @@ type identity struct {
 	id *IdentityIdentifier
 
 	// cert contains the x.509 certificate that signs the public key of this instance
-	cert *x509.Certificate
+	cert *bls.Certificate
 
 	// this is the public key of this instance
 	pk bccsp.Key
@@ -52,10 +52,10 @@ type identity struct {
 	msp *bccspmsp
 }
 
-func newIdentity(cert *x509.Certificate, pk bccsp.Key, msp *bccspmsp) (Identity, error) {
-	if mspIdentityLogger.IsEnabledFor(zapcore.DebugLevel) {
-		mspIdentityLogger.Debugf("Creating identity instance for cert %s", certToPEM(cert))
-	}
+func newIdentity(cert *bls.Certificate, pk bccsp.Key, msp *bccspmsp) (Identity, error) {
+	//if mspIdentityLogger.IsEnabledFor(zapcore.DebugLevel) {
+	//	mspIdentityLogger.Debugf("Creating identity instance for cert %s", certToPEM(cert))
+	//}
 
 	// Sanitize first the certificate
 	cert, err := msp.sanitizeCert(cert)
@@ -175,18 +175,10 @@ func (id *identity) Verify(msg []byte, sig []byte) error {
 
 	var valid bool
 
-	switch id.cert.PublicKeyAlgorithm {
-	case x509.RSA:
-		valid, err = id.msp.bccsp.Verify(id.pk, sig, digest, &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash, Hash: crypto.SHA256})
-	case x509.ECDSA:
-		valid, err = id.msp.bccsp.Verify(id.pk, sig, digest, nil)
-	case bls.BLS:
-		
-		valid,err = id.msp.bccsp.Verify(id.pk,sig,digest,nil)
-	default:
+
 		valid, err = id.msp.bccsp.Verify(id.pk, sig, digest, nil)
 
-	}
+
 	//valid, err := id.msp.bccsp.Verify(id.pk, sig, digest, nil)
 	if err != nil {
 		return errors.WithMessage(err, "could not determine the validity of the signature")
@@ -235,7 +227,7 @@ type signingidentity struct {
 	signer crypto.Signer
 }
 
-func newSigningIdentity(cert *x509.Certificate, pk bccsp.Key, signer crypto.Signer, msp *bccspmsp) (SigningIdentity, error) {
+func newSigningIdentity(cert *bls.Certificate, pk bccsp.Key, signer crypto.Signer, msp *bccspmsp) (SigningIdentity, error) {
 	//mspIdentityLogger.Infof("Creating signing identity instance for ID %s", id)
 	mspId, err := newIdentity(cert, pk, msp)
 	if err != nil {

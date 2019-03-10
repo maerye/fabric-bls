@@ -9,6 +9,7 @@ import (
 	"crypto/x509"
 	"encoding/hex"
 	"encoding/pem"
+	"github.com/hyperledger/fabric/bls"
 	"os"
 	"path/filepath"
 
@@ -277,8 +278,8 @@ func GenerateLocalRSAMSP(baseDir, name string, sans []string, signCA *ca.CA,
 	return nil
 }
 
-func GenerateLocalBLSMSP(baseDir, name string, sans []string, signCA *ca.CA,
-	tlsCA *ca.CA, nodeType int, nodeOUs bool) error {
+func GenerateLocalBLSMSP(baseDir, name string, sans []string, signCA *ca.BLSCA,
+	tlsCA *ca.BLSCA, nodeType int, nodeOUs bool) error {
 
 	// create folder structure
 	mspDir := filepath.Join(baseDir, "msp")
@@ -325,12 +326,12 @@ func GenerateLocalBLSMSP(baseDir, name string, sans []string, signCA *ca.CA,
 	// write artifacts to MSP folders
 
 	// the signing CA certificate goes into cacerts
-	err = x509Export(filepath.Join(mspDir, "cacerts", x509Filename(signCA.Name)), signCA.SignCert)
+	err = blsExoprt(filepath.Join(mspDir, "cacerts", x509Filename(signCA.Name)), signCA.SignCert)
 	if err != nil {
 		return err
 	}
 	// the TLS CA certificate goes into tlscacerts
-	err = x509Export(filepath.Join(mspDir, "tlscacerts", x509Filename(tlsCA.Name)), tlsCA.SignCert)
+	err = blsExoprt(filepath.Join(mspDir, "tlscacerts", x509Filename(tlsCA.Name)), tlsCA.SignCert)
 	if err != nil {
 		return err
 	}
@@ -347,7 +348,7 @@ func GenerateLocalBLSMSP(baseDir, name string, sans []string, signCA *ca.CA,
 	// cleared up anyway by copyAdminCert, but
 	// we leave a valid admin for now for the sake
 	// of unit tests
-	err = x509Export(filepath.Join(mspDir, "admincerts", x509Filename(name)), cert)
+	err = blsExoprt(filepath.Join(mspDir, "admincerts", x509Filename(name)), cert)
 	if err != nil {
 		return err
 	}
@@ -373,7 +374,7 @@ func GenerateLocalBLSMSP(baseDir, name string, sans []string, signCA *ca.CA,
 	if err != nil {
 		return err
 	}
-	err = x509Export(filepath.Join(tlsDir, "ca.crt"), tlsCA.SignCert)
+	err = blsExoprt(filepath.Join(tlsDir, "ca.crt"), tlsCA.SignCert)
 	if err != nil {
 		return err
 	}
@@ -484,18 +485,18 @@ func GenerateRSAVerifyingMSP(baseDir string, signCA *ca.CA, tlsCA *ca.CA, nodeOU
 	return nil
 }
 
-func GenerateBLSVerifyingMSP(baseDir string, signCA *ca.CA, tlsCA *ca.CA, nodeOUs bool) error {
+func GenerateBLSVerifyingMSP(baseDir string, signCA *ca.BLSCA, tlsCA *ca.BLSCA, nodeOUs bool) error {
 
 	// create folder structure and write artifacts to proper locations
 	err := createFolderStructure(baseDir, false)
 	if err == nil {
 		// the signing CA certificate goes into cacerts
-		err = x509Export(filepath.Join(baseDir, "cacerts", x509Filename(signCA.Name)), signCA.SignCert)
+		err = blsExoprt(filepath.Join(baseDir, "cacerts", x509Filename(signCA.Name)), signCA.SignCert)
 		if err != nil {
 			return err
 		}
 		// the TLS CA certificate goes into tlscacerts
-		err = x509Export(filepath.Join(baseDir, "tlscacerts", x509Filename(tlsCA.Name)), tlsCA.SignCert)
+		err = blsExoprt(filepath.Join(baseDir, "tlscacerts", x509Filename(tlsCA.Name)), tlsCA.SignCert)
 		if err != nil {
 			return err
 		}
@@ -557,6 +558,9 @@ func x509Filename(name string) string {
 }
 
 func x509Export(path string, cert *x509.Certificate) error {
+	return pemExport(path, "CERTIFICATE", cert.Raw)
+}
+func blsExoprt(path string, cert *bls.Certificate) error {
 	return pemExport(path, "CERTIFICATE", cert.Raw)
 }
 
