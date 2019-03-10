@@ -90,7 +90,7 @@ func NewWithParams(securityLevel int, hashFamily string, keyStore bccsp.KeyStore
 	swbccsp.AddWrapper(reflect.TypeOf(&bccsp.RSA2048KeyGenOpts{}), &rsaKeyGenerator{length: 2048})
 	swbccsp.AddWrapper(reflect.TypeOf(&bccsp.RSA3072KeyGenOpts{}), &rsaKeyGenerator{length: 3072})
 	swbccsp.AddWrapper(reflect.TypeOf(&bccsp.RSA4096KeyGenOpts{}), &rsaKeyGenerator{length: 4096})
-	swbccsp.AddWrapper(reflect.TypeOf(&bccsp.BLSKeyGenOpts{}),&blsKeyGenerator{rbits:160,qbits:512})
+	swbccsp.AddWrapper(reflect.TypeOf(&bccsp.BLSKeyGenOpts{}),&blsKeyGenerator{})
 
 	// Set the key generators
 	swbccsp.AddWrapper(reflect.TypeOf(&ecdsaPrivateKey{}), &ecdsaPrivateKeyKeyDeriver{})
